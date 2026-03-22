@@ -1,0 +1,8 @@
+
+{
+  "name": "FocusFlow Day Planner",
+  "description": "A time-boxed productivity and habit app to help you plan your day, focus on tasks, and build consistent habits. Features a daily timeline, simulated focus modes, and smart task suggestions.",
+  "requestFramePermissions": [
+    "notifications"
+  ]
+}
