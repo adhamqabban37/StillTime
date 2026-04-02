@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Configuration.
+  - Enforces HTTPS for all traffic in production.
+  - No cleartext (HTTP) traffic is permitted.
+  - The app only communicates with trusted system CAs.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust the standard Android system CA bundle only -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

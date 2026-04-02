@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1E1E2E"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/widget_focus_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Focus Session"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/widget_tasks_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Today's Tasks"
+        android:textColor="#A6ACCD"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/widget_habits_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Habit Streaks"
+        android:textColor="#A6ACCD"
+        android:textSize="14sp" />
+
+</LinearLayout>

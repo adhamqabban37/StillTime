@@ -35,7 +35,7 @@ export default function FocusScreen({ task }: { task: Task }) {
 
     // Regular mode or final completion
     console.log(`Task "${task.title}" completed!`);
-    dispatch({ type: "COMPLETE_TASK", payload: { taskId: task.id } });
+    dispatch({ type: "COMPLETE_TASK", payload: { taskId: task.id, completedAt: new Date().toISOString() } });
     if (task.linkedItemId) {
       dispatch({
         type: "UPDATE_SAVED_ITEM",
@@ -73,7 +73,7 @@ export default function FocusScreen({ task }: { task: Task }) {
 
   const handleMarkComplete = () => {
     if (window.confirm("Mark this task as complete?")) {
-      dispatch({ type: "COMPLETE_TASK", payload: { taskId: task.id } });
+      dispatch({ type: "COMPLETE_TASK", payload: { taskId: task.id, completedAt: new Date().toISOString() } });
       if (task.linkedItemId) {
         dispatch({
           type: "UPDATE_SAVED_ITEM",

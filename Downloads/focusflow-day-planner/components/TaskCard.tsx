@@ -1,10 +1,4 @@
-import React, {
-  useContext,
-  useState,
-  useRef,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useContext, useState, useRef, useCallback } from "react";
 import { Task } from "../types.ts";
 import { AppContext } from "../context/AppContext.tsx";
 import { DAY_START_HOUR, DAY_END_HOUR, MINUTE_HEIGHT } from "../constants.ts";
@@ -28,7 +22,8 @@ export default function TaskCard({
   const dragStartY = useRef(0);
   const originalTop = useRef(0);
   const hasDragged = useRef(false);
-  const longPressTimer = useRef<number | null>(null);
+  const activePointerId = useRef<number | null>(null);
+  const suppressClick = useRef(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Handle optional startTime and duration
@@ -52,7 +47,7 @@ export default function TaskCard({
       const newMinute = ((totalMinutes % 60) + 60) % 60;
       const clampedHour = Math.max(
         DAY_START_HOUR,
-        Math.min(DAY_END_HOUR - 1, newHour)
+        Math.min(DAY_END_HOUR - 1, newHour),
       );
       const clampedMinute =
         clampedHour === DAY_END_HOUR - 1
@@ -62,45 +57,20 @@ export default function TaskCard({
         .toString()
         .padStart(2, "0")}`;
     },
-    [duration]
+    [duration],
   );
 
   const handleCardClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!hasDragged.current) {
+    if (!hasDragged.current && !suppressClick.current) {
       dispatch({ type: "SET_CONTROL_PANEL_TASK", payload: task });
     }
+    suppressClick.current = false;
     hasDragged.current = false;
   };
 
-  const handleDragMove = useCallback(
-    (e: MouseEvent | TouchEvent) => {
-      if (!isDragging) return; // Guard: only process if actively dragging
-      e.preventDefault();
-      e.stopPropagation();
-      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-      const delta = clientY - dragStartY.current;
-      if (Math.abs(delta) > 3) {
-        hasDragged.current = true;
-      }
-      setDragOffset(delta);
-      setPreviewTime(calculateTimeFromOffset(delta));
-    },
-    [calculateTimeFromOffset, isDragging]
-  );
-
-  const handleDragEnd = useCallback(() => {
-    document.removeEventListener("mousemove", handleDragMove);
-    document.removeEventListener("mouseup", handleDragEnd);
-    document.removeEventListener("touchmove", handleDragMove);
-    document.removeEventListener("touchend", handleDragEnd);
-    document.removeEventListener("touchcancel", handleDragEnd);
+  const finishDrag = useCallback(() => {
     window.dispatchEvent(new Event("focusflow:unlockSwipe"));
-
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
 
     if (hasDragged.current && Math.abs(dragOffset) > 5) {
       const newStartTime = calculateTimeFromOffset(dragOffset);
@@ -114,7 +84,6 @@ export default function TaskCard({
           type: "SHOW_TOAST",
           payload: { message: `📅 Moved to ${newStartTime}` },
         });
-        // Haptic feedback on mobile if available
         if (navigator.vibrate) {
           navigator.vibrate(50);
         }
@@ -124,14 +93,9 @@ export default function TaskCard({
     setIsDragging(false);
     setDragOffset(0);
     setPreviewTime(null);
-  }, [
-    dispatch,
-    dragOffset,
-    startTime,
-    task,
-    handleDragMove,
-    calculateTimeFromOffset,
-  ]);
+    activePointerId.current = null;
+    suppressClick.current = hasDragged.current;
+  }, [calculateTimeFromOffset, dispatch, dragOffset, startTime, task]);
 
   const startDragging = useCallback(
     (clientY: number) => {
@@ -145,88 +109,58 @@ export default function TaskCard({
         navigator.vibrate(30);
       }
 
-      document.addEventListener("mousemove", handleDragMove, {
-        passive: false,
-      });
-      document.addEventListener("mouseup", handleDragEnd);
-      document.addEventListener("touchmove", handleDragMove, {
-        passive: false,
-      });
-      document.addEventListener("touchend", handleDragEnd);
-      document.addEventListener("touchcancel", handleDragEnd);
       window.dispatchEvent(new Event("focusflow:lockSwipe"));
     },
-    [top, handleDragMove, handleDragEnd]
+    [top],
   );
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
       e.stopPropagation();
+      activePointerId.current = e.pointerId;
+      cardRef.current?.setPointerCapture(e.pointerId);
       startDragging(e.clientY);
     },
-    [startDragging]
+    [startDragging],
   );
 
-  const handleTouchStart = useCallback(
-    (e: React.TouchEvent) => {
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDragging) return;
+      if (activePointerId.current !== e.pointerId) return;
+
+      e.preventDefault();
       e.stopPropagation();
-      const touch = e.touches[0];
 
-      // Long press to start drag on mobile (300ms)
-      longPressTimer.current = window.setTimeout(() => {
-        startDragging(touch.clientY);
-        if (navigator.vibrate) {
-          navigator.vibrate([30, 20, 30]);
-        }
-      }, 300);
-
-      // If finger moves before long press, cancel
-      const handleTouchMoveCancel = (moveEvent: TouchEvent) => {
-        const moveTouch = moveEvent.touches[0];
-        const distance = Math.sqrt(
-          Math.pow(moveTouch.clientX - touch.clientX, 2) +
-            Math.pow(moveTouch.clientY - touch.clientY, 2)
-        );
-        if (distance > 10 && longPressTimer.current) {
-          clearTimeout(longPressTimer.current);
-          longPressTimer.current = null;
-          document.removeEventListener("touchmove", handleTouchMoveCancel);
-        }
-      };
-
-      const handleTouchEndCancel = () => {
-        if (longPressTimer.current) {
-          clearTimeout(longPressTimer.current);
-          longPressTimer.current = null;
-        }
-        document.removeEventListener("touchmove", handleTouchMoveCancel);
-        document.removeEventListener("touchend", handleTouchEndCancel);
-      };
-
-      document.addEventListener("touchmove", handleTouchMoveCancel, {
-        passive: true,
-      });
-      document.addEventListener("touchend", handleTouchEndCancel, {
-        once: true,
-      });
+      const delta = e.clientY - dragStartY.current;
+      if (Math.abs(delta) > 3) {
+        hasDragged.current = true;
+      }
+      setDragOffset(delta);
+      setPreviewTime(calculateTimeFromOffset(delta));
     },
-    [startDragging]
+    [calculateTimeFromOffset, isDragging],
   );
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      document.removeEventListener("mousemove", handleDragMove);
-      document.removeEventListener("mouseup", handleDragEnd);
-      document.removeEventListener("touchmove", handleDragMove);
-      document.removeEventListener("touchend", handleDragEnd);
-      document.removeEventListener("touchcancel", handleDragEnd);
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-      }
-      window.dispatchEvent(new Event("focusflow:unlockSwipe"));
-    };
-  }, [handleDragMove, handleDragEnd]);
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (activePointerId.current !== e.pointerId) return;
+      e.stopPropagation();
+      cardRef.current?.releasePointerCapture(e.pointerId);
+      finishDrag();
+    },
+    [finishDrag],
+  );
+
+  const handlePointerCancel = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (activePointerId.current !== e.pointerId) return;
+      e.stopPropagation();
+      cardRef.current?.releasePointerCapture(e.pointerId);
+      finishDrag();
+    },
+    [finishDrag],
+  );
 
   const cardBg =
     task.type === "Habit"
@@ -251,8 +185,10 @@ export default function TaskCard({
         touchAction: "none",
       }}
       onClick={handleCardClick}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       aria-label={`Task: ${task.title}, from ${startTime} for ${duration} minutes. Long press and drag to reschedule.`}
     >
       {/* Time preview bubble when dragging */}

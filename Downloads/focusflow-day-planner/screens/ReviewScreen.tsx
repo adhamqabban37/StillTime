@@ -6,7 +6,8 @@ import {
   getHeatmapData,
   calculateHabitStreaksFromData,
 } from "../logic/analytics.ts";
-import { exportAllData } from "../logic/exportData.ts";
+import { exportSummary, importData } from "../logic/exportData.ts";
+import { useRef } from "react";
 import { BADGES } from "../constants.ts";
 import { FireIcon, SparklesIcon, TrophyIcon } from "../components/icons.tsx";
 import { ActivityLogEntry } from "../types.ts";
@@ -215,11 +216,11 @@ export default function ReviewScreen() {
   const weeklyData = useMemo(() => getWeeklyCompletionData(tasks), [tasks]);
   const heatmapData = useMemo(
     () => getHeatmapData(tasks, habitLogs),
-    [tasks, habitLogs]
+    [tasks, habitLogs],
   );
   const habitStreaks = useMemo(
     () => calculateHabitStreaksFromData(habits, habitLogs),
-    [habits, habitLogs]
+    [habits, habitLogs],
   );
 
   // Calculate weekly completed tasks
@@ -227,7 +228,7 @@ export default function ReviewScreen() {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     return tasks.filter(
-      (t) => t.completed && t.completedAt && new Date(t.completedAt) >= weekAgo
+      (t) => t.completed && t.completedAt && new Date(t.completedAt) >= weekAgo,
     ).length;
   }, [tasks]);
 
@@ -236,7 +237,7 @@ export default function ReviewScreen() {
     if (habitStreaks.length === 0) return null;
     return habitStreaks.reduce(
       (best, curr) => (curr.streak > best.streak ? curr : best),
-      habitStreaks[0]
+      habitStreaks[0],
     );
   }, [habitStreaks]);
 
@@ -251,33 +252,33 @@ export default function ReviewScreen() {
     const todayTasks = tasks.filter(
       (t) =>
         t.completedAt &&
-        new Date(t.completedAt).toLocaleDateString("en-CA") === today
+        new Date(t.completedAt).toLocaleDateString("en-CA") === today,
     );
     const todayCompleted = todayTasks.filter((t) => t.completed).length;
     const todayMinutes = todayTasks.reduce(
       (sum, t) => sum + (t.actualDuration || t.duration),
-      0
+      0,
     );
 
     // Weekly tasks
     const weeklyTasks = tasks.filter(
-      (t) => t.completedAt && new Date(t.completedAt) >= weekAgo
+      (t) => t.completedAt && new Date(t.completedAt) >= weekAgo,
     );
     const weeklyCompleted = weeklyTasks.filter((t) => t.completed).length;
     const weeklyMinutes = weeklyTasks.reduce(
       (sum, t) => sum + (t.actualDuration || t.duration),
-      0
+      0,
     );
 
     // Monthly tasks
     const monthlyTasks = tasks.filter(
-      (t) => t.completedAt && new Date(t.completedAt) >= monthAgo
+      (t) => t.completedAt && new Date(t.completedAt) >= monthAgo,
     );
     const monthlyCompleted = monthlyTasks.filter((t) => t.completed).length;
 
     // Habit stats
     const todayHabits = habitLogs.filter(
-      (l) => l.date === today && l.status === "done"
+      (l) => l.date === today && l.status === "done",
     ).length;
     const weeklyHabitsCompleted = habitLogs.filter((l) => {
       const logDate = new Date(l.date);
@@ -303,8 +304,30 @@ export default function ReviewScreen() {
     };
   }, [tasks, habits, habitLogs, weeklyData]);
 
-  const handleExport = () => {
-    exportAllData(tasks, savedItems, gamification);
+  const handleExport = async () => {
+    try {
+      await exportSummary(state);
+    } catch (error) {
+      console.error("Failed to export summary:", error);
+      alert("Failed to export summary. Please try again.");
+    }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await importData(file);
+      if (window.confirm("This will overwrite your existing data. Proceed?")) {
+        dispatch({ type: "RESTORE_BACKUP", payload: data as any });
+        alert("Data successfully restored!");
+      }
+    } catch (err: any) {
+      alert("Failed to import data: " + err.message);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleAddHabit = () => {
@@ -396,16 +419,31 @@ export default function ReviewScreen() {
                 "Consistency is the playground of excellence."
               </p>
             </div>
-            <button
-              onClick={handleExport}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                handleExport();
-              }}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-white/5 rounded-xl text-xs font-bold transition-all shadow-sm touch-manipulation"
-            >
-              <DownloadIcon className="w-3.5 h-3.5" /> Export
-            </button>
+            <div className="flex gap-2">
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleImportFile}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 rounded-xl text-xs font-bold transition-all shadow-sm touch-manipulation"
+              >
+                <DownloadIcon className="w-3.5 h-3.5 rotate-180" /> Import
+              </button>
+              <button
+                onClick={handleExport}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  handleExport();
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-white/5 rounded-xl text-xs font-bold transition-all shadow-sm touch-manipulation"
+              >
+                <DownloadIcon className="w-3.5 h-3.5" /> Export
+              </button>
+            </div>
           </div>
 
           {/* Tab Navigation */}
@@ -540,12 +578,12 @@ export default function ReviewScreen() {
                           v === 0
                             ? "bg-slate-200 dark:bg-slate-800"
                             : v === 1
-                            ? "bg-indigo-200 dark:bg-indigo-900"
-                            : v === 2
-                            ? "bg-indigo-300 dark:bg-indigo-700"
-                            : v === 3
-                            ? "bg-indigo-400 dark:bg-indigo-500"
-                            : "bg-indigo-500 dark:bg-indigo-400"
+                              ? "bg-indigo-200 dark:bg-indigo-900"
+                              : v === 2
+                                ? "bg-indigo-300 dark:bg-indigo-700"
+                                : v === 3
+                                  ? "bg-indigo-400 dark:bg-indigo-500"
+                                  : "bg-indigo-500 dark:bg-indigo-400"
                         }`}
                       />
                     ))}
@@ -567,12 +605,12 @@ export default function ReviewScreen() {
                         level === 0
                           ? "bg-slate-100 dark:bg-slate-800/50"
                           : level === 1
-                          ? "bg-indigo-200 dark:bg-indigo-900/60"
-                          : level === 2
-                          ? "bg-indigo-300 dark:bg-indigo-700/60"
-                          : level === 3
-                          ? "bg-indigo-400 dark:bg-indigo-500/60"
-                          : "bg-indigo-500 dark:bg-indigo-400"
+                            ? "bg-indigo-200 dark:bg-indigo-900/60"
+                            : level === 2
+                              ? "bg-indigo-300 dark:bg-indigo-700/60"
+                              : level === 3
+                                ? "bg-indigo-400 dark:bg-indigo-500/60"
+                                : "bg-indigo-500 dark:bg-indigo-400"
                       }`}
                       title={`${intensity} completed`}
                     />
@@ -901,12 +939,12 @@ export default function ReviewScreen() {
                               v === 0
                                 ? "bg-slate-800"
                                 : v === 1
-                                ? "bg-indigo-900"
-                                : v === 2
-                                ? "bg-indigo-700"
-                                : v === 3
-                                ? "bg-indigo-500"
-                                : "bg-indigo-400"
+                                  ? "bg-indigo-900"
+                                  : v === 2
+                                    ? "bg-indigo-700"
+                                    : v === 3
+                                      ? "bg-indigo-500"
+                                      : "bg-indigo-400"
                             }`}
                           ></div>
                         ))}
@@ -930,12 +968,12 @@ export default function ReviewScreen() {
                             level === 0
                               ? "bg-slate-800/50"
                               : level === 1
-                              ? "bg-indigo-900/60"
-                              : level === 2
-                              ? "bg-indigo-700/60"
-                              : level === 3
-                              ? "bg-indigo-500/60"
-                              : "bg-indigo-400"
+                                ? "bg-indigo-900/60"
+                                : level === 2
+                                  ? "bg-indigo-700/60"
+                                  : level === 3
+                                    ? "bg-indigo-500/60"
+                                    : "bg-indigo-400"
                           }`}
                           title={`${intensity} item${
                             intensity !== 1 ? "s" : ""

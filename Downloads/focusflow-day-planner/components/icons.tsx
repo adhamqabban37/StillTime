@@ -155,6 +155,15 @@ export const InboxIcon = ({ className }: { className?: string }) => (
     />
   </Icon>
 );
+export const IdeasIcon = ({ className }: { className?: string }) => (
+  <Icon className={className}>
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.82 1.508-2.316a7.5 7.5 0 1 0-7.516 0c.85.496 1.508 1.333 1.508 2.316V18"
+    />
+  </Icon>
+);
 export const ReviewIcon = ({ className }: { className?: string }) => (
   <Icon className={className}>
     <path
@@ -247,5 +256,11 @@ export const ArchiveBoxIcon = ({ className }: { className?: string }) => (
       strokeLinejoin="round"
       d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"
     />
+  </Icon>
+);
+
+export const TargetIcon = ({ className }: { className?: string }) => (
+  <Icon className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-5.834 1.591 1.591" />
   </Icon>
 );

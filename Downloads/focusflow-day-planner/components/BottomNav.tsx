@@ -7,6 +7,7 @@ import {
   HabitsIcon,
   InboxIcon,
   ReviewIcon,
+  IdeasIcon,
 } from "./icons.tsx";
 
 const MatrixIcon = ({ className }: { className?: string }) => (
@@ -34,14 +35,15 @@ export default function BottomNav() {
     { mode: "Timeline", label: "Timeline", icon: <TimelineIcon /> },
     { mode: "Matrix", label: "Matrix", icon: <MatrixIcon /> },
     { mode: "Habits", label: "Habits", icon: <HabitsIcon /> },
+    { mode: "Ideas", label: "Ideas", icon: <IdeasIcon /> },
     { mode: "Inbox", label: "Inbox", icon: <InboxIcon /> },
     { mode: "Review", label: "Review", icon: <ReviewIcon /> },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#0a0a0c]/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 z-30 h-16 safe-area-bottom">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
-        <div className="flex justify-around items-center h-full">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#0a0a0c]/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 z-30 h-16 safe-area-bottom overflow-x-auto no-scrollbar">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-full min-w-max">
+        <div className="flex justify-around items-center h-full min-w-max px-2 gap-2">
           {navItems.map((item, index) => (
             <button
               key={item.mode}

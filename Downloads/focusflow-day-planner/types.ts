@@ -11,7 +11,29 @@ export type AppMode =
   | "Habits"
   | "Inbox"
   | "Review"
-  | "Matrix";
+  | "Matrix"
+  | "Accountability"
+  | "Ideas"
+  | "Settings";
+
+// ===== IDEAS JOURNAL TYPES =====
+export type IdeaTopic =
+  | "Sports"
+  | "Work"
+  | "Personal"
+  | "Learning"
+  | "Creative"
+  | "Other";
+
+export interface Idea {
+  id: string;
+  title: string;
+  content: string;
+  topic: IdeaTopic;
+  createdAt: string; // ISO string
+  updatedAt?: string; // ISO string
+  tags?: string[];
+}
 export type Theme = "light" | "dark" | "system";
 export type MatrixQuadrant = "do" | "schedule" | "delegate" | "delete";
 export type MoodLevel =
@@ -154,17 +176,57 @@ export interface Toast {
   icon?: string;
 }
 
+// ===== VOICE ASSISTANT TYPES =====
+export interface VoiceParsedTask {
+  title: string;
+  date: string; // YYYY-MM-DD
+  time?: string; // HH:mm
+  duration: number; // minutes
+  type: TaskType;
+}
+
+// ===== AUTOPILOT TYPES =====
+export interface AutopilotSlot {
+  taskId: string;
+  title: string;
+  start: string; // HH:mm
+  end: string; // HH:mm
+  duration: number;
+}
+
+// ===== GOOGLE CALENDAR TYPES =====
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string; // ISO string
+  end: string; // ISO string
+  startTime: string; // HH:mm (derived)
+  endTime: string; // HH:mm (derived)
+  duration: number; // minutes (derived)
+  isAllDay: boolean;
+  source: "google";
+}
+
 export interface AppState {
   tasks: Task[];
   savedItems: SavedItem[];
   habits: Habit[];
   habitLogs: HabitLog[];
+  goals: Habit[]; // Using Habit type for goals too
+  goalLogs: HabitLog[];
+  ideas: Idea[];
   isAddTaskFormOpen: boolean;
   isAddHabitFormOpen: boolean;
+  isAddGoalFormOpen: boolean;
+  isAddIdeaFormOpen: boolean;
   editingHabit: Habit | null;
   selectedHabit: Habit | null; // for detail modal
+  editingGoal: Habit | null;
+  selectedGoal: Habit | null;
   focusedTask: Task | null;
   editingTask: Task | null;
+  editingIdea: Idea | null;
+  selectedIdeaTopic: IdeaTopic | "all";
   mode: AppMode;
   activeTask: Task | null;
   controlPanelTask: Task | null;
@@ -176,7 +238,10 @@ export interface AppState {
     | "controlPanel"
     | "actionPanel"
     | "addHabit"
+    | "addGoal"
     | "habitDetail"
+    | "goalDetail"
+    | "addIdea"
     | null;
   focusSessionEnd: number | null;
   notificationPermission: "default" | "granted" | "denied";
@@ -190,6 +255,9 @@ export interface AppState {
   showWeeklyRecap: boolean;
   weeklyRecap: WeeklyHabitRecap | null;
   activityLog: ActivityLogEntry[];
+  autopilotEnabled: boolean;
+  calendarEvents: CalendarEvent[];
+  googleCalendarConnected: boolean;
 }
 
 // Activity Log for comprehensive tracking
@@ -232,6 +300,7 @@ export type AppAction =
   | { type: "COMPLETE_TASK"; payload: { taskId: string; completedAt: string } }
   | { type: "UNCOMPLETE_TASK"; payload: string }
   | { type: "RESET_DAILY_HABITS" }
+  | { type: "RESTORE_BACKUP"; payload: Partial<AppState> }
   | { type: "ADD_SAVED_ITEM"; payload: SavedItem }
   | { type: "UPDATE_SAVED_ITEM"; payload: Partial<SavedItem> & { id: string } }
   | { type: "DELETE_SAVED_ITEM"; payload: string }
@@ -265,4 +334,29 @@ export type AppAction =
   | { type: "SET_EDITING_HABIT"; payload: Habit | null }
   | { type: "SET_SELECTED_HABIT"; payload: Habit | null }
   | { type: "SHOW_WEEKLY_RECAP"; payload: WeeklyHabitRecap }
-  | { type: "HIDE_WEEKLY_RECAP" };
+  | { type: "HIDE_WEEKLY_RECAP" }
+  // Goal/Accountability Actions
+  | { type: "SET_GOALS"; payload: Habit[] }
+  | { type: "ADD_GOAL"; payload: Habit }
+  | { type: "UPDATE_GOAL"; payload: Habit }
+  | { type: "DELETE_GOAL"; payload: string }
+  | { type: "ARCHIVE_GOAL"; payload: string }
+  | { type: "SET_GOAL_LOGS"; payload: HabitLog[] }
+  | { type: "LOG_GOAL"; payload: HabitLog }
+  | { type: "REMOVE_GOAL_LOG"; payload: { habitId: string; date: string } }
+  | { type: "TOGGLE_ADD_GOAL_FORM"; payload: boolean }
+  | { type: "SET_EDITING_GOAL"; payload: Habit | null }
+  | { type: "SET_SELECTED_GOAL"; payload: Habit | null }
+  // Ideas Journal Actions
+  | { type: "SET_IDEAS"; payload: Idea[] }
+  | { type: "ADD_IDEA"; payload: Idea }
+  | { type: "UPDATE_IDEA"; payload: Idea }
+  | { type: "DELETE_IDEA"; payload: string }
+  | { type: "TOGGLE_ADD_IDEA_FORM"; payload: boolean }
+  | { type: "SET_EDITING_IDEA"; payload: Idea | null }
+  | { type: "SET_SELECTED_IDEA_TOPIC"; payload: IdeaTopic | "all" }
+  // Autopilot Actions
+  | { type: "SET_AUTOPILOT"; payload: boolean }
+  // Google Calendar Actions
+  | { type: "SET_CALENDAR_EVENTS"; payload: CalendarEvent[] }
+  | { type: "SET_GOOGLE_CALENDAR_CONNECTED"; payload: boolean };

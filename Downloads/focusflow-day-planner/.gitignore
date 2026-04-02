@@ -1,0 +1,25 @@
+# Node / npm
+node_modules/
+dist/
+.cache/
+
+# Vite
+.vite/
+
+# Environment secrets — NEVER commit these
+.env.local
+.env.*.local
+.env
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

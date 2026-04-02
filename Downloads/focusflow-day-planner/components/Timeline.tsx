@@ -2,11 +2,11 @@ import React, { useContext, useMemo } from "react";
 import { AppContext } from "../context/AppContext.tsx";
 import { DAY_START_HOUR, DAY_END_HOUR, MINUTE_HEIGHT } from "../constants.ts";
 import TaskCard from "./TaskCard.tsx";
-import { Task } from "../types.ts";
+import { Task, CalendarEvent } from "../types.ts";
 
 // Calculate column positions for overlapping tasks
 function calculateTaskColumns(
-  tasks: Task[]
+  tasks: Task[],
 ): Map<string, { column: number; totalColumns: number }> {
   const result = new Map<string, { column: number; totalColumns: number }>();
 
@@ -29,7 +29,7 @@ function calculateTaskColumns(
     let foundGroup = false;
     for (const group of groups) {
       const overlapsGroup = group.some(
-        (g) => task.startMin < g.endMin && task.endMin > g.startMin
+        (g) => task.startMin < g.endMin && task.endMin > g.startMin,
       );
       if (overlapsGroup) {
         group.push(task);
@@ -48,7 +48,7 @@ function calculateTaskColumns(
     group.sort(
       (a, b) =>
         a.startMin - b.startMin ||
-        a.endMin - a.startMin - (b.endMin - b.startMin)
+        a.endMin - a.startMin - (b.endMin - b.startMin),
     );
 
     const columns: (typeof scheduledTasks)[] = [];
@@ -86,6 +86,7 @@ function calculateTaskColumns(
 
 export default function Timeline() {
   const { state } = useContext(AppContext);
+  const today = new Date().toLocaleDateString("en-CA");
 
   const timeSlots = useMemo(() => {
     const slots = [];
@@ -100,13 +101,19 @@ export default function Timeline() {
   const totalHeight = (DAY_END_HOUR - DAY_START_HOUR) * 60 * MINUTE_HEIGHT;
 
   // Calculate column layout for overlapping tasks
-  const taskColumns = useMemo(
-    () => calculateTaskColumns(state.tasks),
-    [state.tasks]
+  const visibleTasks = useMemo(
+    () =>
+      state.tasks.filter((task) => !task.snoozedTo || task.snoozedTo <= today),
+    [state.tasks, today],
   );
 
-  const scheduledTasks = state.tasks.filter(
-    (task) => task.startTime && task.duration
+  const taskColumns = useMemo(
+    () => calculateTaskColumns(visibleTasks),
+    [visibleTasks],
+  );
+
+  const scheduledTasks = visibleTasks.filter(
+    (task) => task.startTime && task.duration,
   );
 
   return (
@@ -171,6 +178,35 @@ export default function Timeline() {
               column={colInfo.column}
               totalColumns={colInfo.totalColumns}
             />
+          );
+        })}
+
+        {/* Google Calendar Events */}
+        {state.calendarEvents.map((event: CalendarEvent) => {
+          const [sh, sm] = event.startTime.split(":").map(Number);
+          const [eh, em] = event.endTime.split(":").map(Number);
+          const startMin = sh * 60 + sm - DAY_START_HOUR * 60;
+          const endMin = eh * 60 + em - DAY_START_HOUR * 60;
+          const duration = endMin - startMin;
+          if (startMin < 0 || duration <= 0) return null;
+          const top = startMin * MINUTE_HEIGHT;
+          const height = duration * MINUTE_HEIGHT;
+          return (
+            <div
+              key={event.id}
+              className="absolute left-0 right-0 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 overflow-hidden pointer-events-none"
+              style={{ top: `${top}px`, height: `${Math.max(height, 20)}px` }}
+            >
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                <span className="text-xs font-medium text-blue-300 truncate">
+                  {event.title}
+                </span>
+              </div>
+              <span className="text-[10px] text-blue-400/70">
+                {event.startTime} – {event.endTime}
+              </span>
+            </div>
           );
         })}
       </div>

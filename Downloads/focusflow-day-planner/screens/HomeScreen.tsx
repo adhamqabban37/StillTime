@@ -7,6 +7,7 @@ import { useNextAction } from "../hooks/useNextAction.ts";
 import { useGemini } from "../hooks/useGemini.ts";
 import { SparklesIcon, FireIcon, XMarkIcon } from "../components/icons.tsx";
 import DailySummaryCard from "../components/DailySummaryCard.tsx";
+import VoiceAssistant from "../components/VoiceAssistant.tsx";
 import { enrichHabitWithStats, getToday } from "../logic/habitUtils.ts";
 import { getStreakData } from "../logic/streakTracker.ts";
 
@@ -144,7 +145,7 @@ export default function HomeScreen() {
 
   const [currentMood, setCurrentMood] = useState<number | null>(null);
   const [showNotificationBanner, setShowNotificationBanner] = useState(
-    state.notificationPermission !== "granted"
+    state.notificationPermission !== "granted",
   );
   const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
   const [showSummary, setShowSummary] = useState(false);
@@ -170,7 +171,7 @@ export default function HomeScreen() {
   }, [habits, habitLogs]);
 
   const completedHabitsCount = todaysHabits.filter(
-    (h) => h.todayStatus === "done"
+    (h) => h.todayStatus === "done",
   ).length;
   const habitProgress =
     todaysHabits.length > 0
@@ -235,6 +236,23 @@ export default function HomeScreen() {
   };
 
   const handleDismissSuggestion = () => {
+    if (suggestion?.task) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      dispatch({
+        type: "UPDATE_TASK",
+        payload: {
+          ...suggestion.task,
+          snoozedTo: tomorrow.toLocaleDateString("en-CA"),
+        },
+      });
+      dispatch({
+        type: "SHOW_TOAST",
+        payload: { message: "Dismissed for today." },
+      });
+    }
+
     dispatch({ type: "SET_NEXT_ACTION_SUGGESTION", payload: null });
   };
 
@@ -712,6 +730,7 @@ export default function HomeScreen() {
               className="bg-transparent border-none outline-none flex-1 text-sm text-slate-200 placeholder:text-slate-500 py-2"
             />
             <div className="flex items-center gap-2 pr-2">
+              <VoiceAssistant />
               <kbd className="hidden md:flex px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-500 font-sans tracking-tighter italic">
                 AI Search
               </kbd>

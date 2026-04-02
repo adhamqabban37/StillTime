@@ -296,7 +296,7 @@ const Quadrant = ({
   items: (Task | SavedItem)[];
   onQuickAction: (
     item: Task | SavedItem,
-    action: "complete" | "focus" | "delete"
+    action: "complete" | "focus" | "delete",
   ) => void;
 }) => {
   const config = quadrantConfig[quadrant];
@@ -348,12 +348,12 @@ export default function MatrixScreen() {
       ...state.tasks.filter((t) => !t.completed),
       ...state.savedItems.filter((i) => i.status === "inbox"),
     ],
-    [state.tasks, state.savedItems]
+    [state.tasks, state.savedItems],
   );
 
   const uncategorizedItems = useMemo(
     () => allItems.filter((i) => !i.matrixQuadrant),
-    [allItems]
+    [allItems],
   );
 
   const quadrants: Record<MatrixQuadrant, (Task | SavedItem)[]> = useMemo(
@@ -363,12 +363,12 @@ export default function MatrixScreen() {
       delegate: allItems.filter((i) => i.matrixQuadrant === "delegate"),
       delete: allItems.filter((i) => i.matrixQuadrant === "delete"),
     }),
-    [allItems]
+    [allItems],
   );
 
   const handleQuickAction = (
     item: Task | SavedItem,
-    action: "complete" | "focus" | "delete"
+    action: "complete" | "focus" | "delete",
   ) => {
     if ("startTime" in item) {
       const task = item as Task;
@@ -381,7 +381,6 @@ export default function MatrixScreen() {
           break;
         case "focus":
           dispatch({ type: "START_FOCUS", payload: task });
-          dispatch({ type: "SET_MODE", payload: "Focus" });
           break;
         case "delete":
           dispatch({ type: "DELETE_TASK", payload: task.id });
@@ -501,7 +500,7 @@ export default function MatrixScreen() {
                         item={item}
                         isActive={item.matrixQuadrant === q}
                       />
-                    )
+                    ),
                   )}
                 </div>
               </div>

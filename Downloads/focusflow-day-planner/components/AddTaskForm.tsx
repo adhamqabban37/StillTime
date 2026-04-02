@@ -20,7 +20,7 @@ export default function AddTaskForm() {
   const [duration, setDuration] = useState(0);
   const [startTime, setStartTime] = useState("");
   const [linkedItemId, setLinkedItemId] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -97,14 +97,14 @@ export default function AddTaskForm() {
         body: `"${task.title}" begins in 5 minutes.`,
         tag: `${task.id}-reminder`,
       },
-      taskStartTime - 5 * 60 * 1000
+      taskStartTime - 5 * 60 * 1000,
     );
 
     // Start notification
     scheduleNotification(
       "Time to start your task!",
       { body: `It's time for "${task.title}".`, tag: `${task.id}-start` },
-      taskStartTime
+      taskStartTime,
     );
   };
 
@@ -123,7 +123,7 @@ export default function AddTaskForm() {
       notes: notes.trim() || undefined,
       duration: finalDuration,
       startTime: finalStartTime,
-      recurrence: "none", // Simplified for MVP
+      recurrence: "none" as const, // Simplified for MVP
       linkedItemId,
     };
 
@@ -214,7 +214,7 @@ export default function AddTaskForm() {
 
   // Handle backdrop click/touch
   const handleBackdropInteraction = (
-    e: React.MouseEvent | React.TouchEvent
+    e: React.MouseEvent | React.TouchEvent,
   ) => {
     if (e.target === e.currentTarget) {
       e.preventDefault();
@@ -411,7 +411,7 @@ export default function AddTaskForm() {
                   value={duration || ""}
                   onChange={(e) =>
                     setDuration(
-                      e.target.value ? parseInt(e.target.value, 10) : 0
+                      e.target.value ? parseInt(e.target.value, 10) : 0,
                     )
                   }
                   placeholder="30"

@@ -42,14 +42,17 @@ export const CATEGORY_CONFIG: Record<
 };
 
 export const BADGES: {
-  [key: string]: Badge & { condition: (state: any) => boolean };
+  [key: string]: Badge & {
+    condition: (state: any, completedTask?: any) => boolean;
+  };
 } = {
   FIRST_TASK: {
     id: "FIRST_TASK",
     name: "First Step",
     description: "Completed your first task.",
     icon: "✅",
-    condition: (state) => state.tasks.filter((t) => t.completed).length === 1,
+    condition: (state) =>
+      state.tasks.filter((t: any) => t.completed).length === 1,
   },
   STREAK_5: {
     id: "STREAK_5",
@@ -59,9 +62,9 @@ export const BADGES: {
     condition: (state) => {
       // This is a simplified check. A real app would need more robust date tracking.
       const streaks = state.tasks
-        .filter((t) => t.type === "Habit")
-        .map((h) => (h.recurrence === "daily" ? 5 : 0)); // Mock streak
-      return Math.max(...streaks) >= 5;
+        .filter((t: any) => t.type === "Habit")
+        .map((h: any) => (h.recurrence === "daily" ? 5 : 0)); // Mock streak
+      return streaks.length > 0 ? Math.max(...streaks) >= 5 : false;
     },
   },
   FOCUS_MASTER: {
@@ -77,6 +80,6 @@ export const BADGES: {
     description: "Cleared your entire inbox.",
     icon: "📭",
     condition: (state) =>
-      state.savedItems.filter((i) => i.status === "inbox").length === 0,
+      state.savedItems.filter((i: any) => i.status === "inbox").length === 0,
   },
 };

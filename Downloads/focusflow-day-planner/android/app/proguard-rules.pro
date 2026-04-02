@@ -1,33 +1,52 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ═══════════════════════════════════════════════════════════════════════════
+# FocusFlow ProGuard / R8 Rules
+# ═══════════════════════════════════════════════════════════════════════════
 
-# Keep Capacitor WebView classes
+# ── Capacitor core ──────────────────────────────────────────────────────────
 -keep class com.getcapacitor.** { *; }
 -keepclassmembers class com.getcapacitor.** { *; }
 
-# Keep all JavaScript interface methods for WebView
+# ── Capacitor plugins ───────────────────────────────────────────────────────
+-keep class com.capacitorjs.plugins.localnotifications.** { *; }
+-keep class com.capacitorjs.plugins.preferences.** { *; }
+
+# ── App Widget ──────────────────────────────────────────────────────────────
+-keep class com.focusflow.dayplanner.widget.** { *; }
+-keepclassmembers class com.focusflow.dayplanner.widget.** { *; }
+
+# ── JavaScript / WebView bridge ─────────────────────────────────────────────
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }
-
-# Keep WebView classes
 -keepclassmembers class * extends android.webkit.WebView {
-   public *;
+    public *;
 }
-
-# Keep JavaScript-accessible methods in Android native code
--keepattributes *Annotation*
 -keepattributes JavascriptInterface
 
-# Preserve line numbers for debugging stack traces
--keepattributes SourceFile,LineNumberTable
+# ── AndroidX / AppCompat ────────────────────────────────────────────────────
+-keep class androidx.appcompat.** { *; }
+-keep class androidx.core.** { *; }
+-keep class androidx.coordinatorlayout.** { *; }
+-keep class androidx.core.splashscreen.** { *; }
+-dontwarn androidx.**
 
-# Don't warn about missing classes
+# ── JSON (org.json) ─────────────────────────────────────────────────────────
+-keep class org.json.** { *; }
+
+# ── Annotations & debug info ────────────────────────────────────────────────
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# ── WebView / network ───────────────────────────────────────────────────────
 -dontwarn android.webkit.**
 
-# Keep source file names for better crash reports
--renamesourcefileattribute SourceFile
+# ── Keep R classes (resource IDs must match widget layout) ──────────────────
+-keepclassmembers class **.R$* {
+    public static <fields>;
+}
+
+# ── Kotlin intrinsics (safe to suppress) ───────────────────────────────────
+-dontwarn kotlin.**
+-dontwarn kotlinx.**
+

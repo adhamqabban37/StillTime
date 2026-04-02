@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
     namespace = "com.focusflow.dayplanner"
@@ -7,20 +8,22 @@ android {
         applicationId "com.focusflow.dayplanner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 13
-        versionName "1.4.6"
+        versionCode 17
+        versionName "1.6.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Enable multidex for large dependency trees
+        multiDexEnabled true
         aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    
+
     signingConfigs {
         release {
-            // You'll need to create a keystore file and update these paths
-            // Run: keytool -genkey -v -keystore focusflow-release-key.keystore -alias focusflow -keyalg RSA -keysize 2048 -validity 10000
+            // Keys are read from gradle.properties (or from ~/.gradle/gradle.properties in CI).
+            // Run once to create the keystore:
+            //   keytool -genkey -v -keystore focusflow-release-key.keystore \
+            //           -alias focusflow -keyalg RSA -keysize 2048 -validity 10000
             if (project.hasProperty('FOCUSFLOW_RELEASE_STORE_FILE')) {
                 storeFile file(FOCUSFLOW_RELEASE_STORE_FILE)
                 storePassword FOCUSFLOW_RELEASE_STORE_PASSWORD
@@ -29,27 +32,41 @@ android {
             }
         }
     }
-    
+
     buildTypes {
+        debug {
+            debuggable true
+            minifyEnabled false
+            shrinkResources false
+        }
         release {
+            debuggable false
             minifyEnabled true
             shrinkResources true
+            // Use the optimized rule set; our additions are in proguard-rules.pro
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (project.hasProperty('FOCUSFLOW_RELEASE_STORE_FILE')) {
                 signingConfig signingConfigs.release
             }
         }
     }
-    
+
+    // R8 full mode: removes unused methods/fields more aggressively
+    buildFeatures {
+        buildConfig true
+    }
+
+    // AAB splits: smaller initial download per device
     bundle {
-        language {
-            enableSplit = true
-        }
-        density {
-            enableSplit = true
-        }
-        abi {
-            enableSplit = true
+        language { enableSplit = true }
+        density  { enableSplit = true }
+        abi      { enableSplit = true }
+    }
+
+    // 64-bit support: required by Google Play since Aug 2019
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging false
         }
     }
 }
